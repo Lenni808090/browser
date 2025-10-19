@@ -81,7 +81,7 @@ func (l *Lexer) Tokenize() []Token {
 
 		}
 	}
-
+	tokens = append(tokens, token(EoF, "EoF"))
 	return tokens
 }
 
