@@ -1,4 +1,4 @@
-package lib
+package lexer_html
 
 type TokenType int
 

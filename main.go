@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// Helper function to print the node tree recursively
 func printNode(node *lib.Node, depth int) {
 	prefix := ""
 	for i := 0; i < depth; i++ {

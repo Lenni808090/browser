@@ -1,4 +1,4 @@
-package lib
+package ast
 
 type Node struct {
 	Type     NodeType

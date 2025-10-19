@@ -1,44 +1,46 @@
-package lib
+package ast
 
-import "fmt"
+import (
+	lx "browser/internal/lexer_html"
+	"fmt"
+)
 
 type Parser struct {
-	tokens []Token
+	tokens []lx.Token
 	pos    int
 }
 
-func NewParser(tokens []Token) *Parser {
+func NewParser(tokens []lx.Token) *Parser {
 	return &Parser{
 		tokens: tokens,
 		pos:    0,
 	}
 }
 
-func (p *Parser) eat() Token {
+func (p *Parser) eat() lx.Token {
 	if p.pos >= len(p.tokens) {
-		return Token{EoF, "EoF"}
+		return lx.Token{TokenType: lx.EoF, Value: "EoF"}
 	}
 	token := p.tokens[p.pos]
 	p.pos++
-
 	return token
 }
 
-func (p *Parser) at() Token {
+func (p *Parser) at() lx.Token {
 	if p.pos == len(p.tokens) {
-		return Token{EoF, "EoF"}
+		return lx.Token{TokenType: lx.EoF, Value: "EoF"}
 	}
 	return p.tokens[p.pos-1]
 }
 
-func (p *Parser) peek() Token {
+func (p *Parser) peek() lx.Token {
 	if p.pos >= len(p.tokens) {
-		return Token{EoF, "EoF"}
+		return lx.Token{TokenType: lx.EoF, Value: "EoF"}
 	}
 	return p.tokens[p.pos]
 }
 
-func (p *Parser) expect(expectedType TokenType, errorMsg string) Token {
+func (p *Parser) expect(expectedType lx.TokenType, errorMsg string) lx.Token {
 	token := p.eat()
 	if token.TokenType != expectedType {
 		panic(errorMsg)
@@ -47,10 +49,7 @@ func (p *Parser) expect(expectedType TokenType, errorMsg string) Token {
 }
 
 func (p *Parser) not_eof() bool {
-	if p.peek().TokenType != TokenType(EoF) {
-		return true
-	}
-	return false
+	return p.peek().TokenType != lx.TokenType(lx.EoF)
 }
 
 func (p *Parser) Pars() *Node {
@@ -70,12 +69,12 @@ func (p *Parser) Pars() *Node {
 }
 
 func (p *Parser) parseNode() *Node {
-	tok := p.peek() // look at the next token
+	tok := p.peek()
 
 	switch tok.TokenType {
-	case OpenTag: // <
+	case lx.OpenTag:
 		return p.parseElementNode()
-	case Literal:
+	case lx.Literal:
 		return p.parseTextNode()
 	default:
 		badTok := p.eat()
@@ -85,33 +84,35 @@ func (p *Parser) parseNode() *Node {
 
 func (p *Parser) parseElementNode() *Node {
 	p.eat() //<
-	tag := p.expect(Identifier, "tag expected").Value
+
+	tag := p.expect(lx.Identifier, "tag expected").Value
 
 	var attr []Attr
-	for p.peek().TokenType == Identifier {
+	for p.peek().TokenType == lx.Identifier {
 		key := p.eat().Value
-		p.expect(Equals, "equals eypected after value")
-		value := p.expect(Identifier, "value needed after key").Value
+		p.expect(lx.Equals, "equals expected after key")
+		value := p.expect(lx.Identifier, "value needed after key").Value
 		attr = append(attr, Attr{Key: key, Value: value})
 	}
+
 	node := NewElementNode(tag, attr)
 
-	if p.peek().TokenType == SelfCloseTag {
+	if p.peek().TokenType == lx.SelfCloseTag {
 		p.eat()
 		return node
 	}
 
-	p.expect(CloseTag, "> expected")
+	p.expect(lx.CloseTag, "> expected")
 
 	for {
 		tok := p.peek()
-		if tok.TokenType == OpenEndTag {
+		if tok.TokenType == lx.OpenEndTag {
 			p.eat()
-			endTag := p.expect(Identifier, "tag name expected")
+			endTag := p.expect(lx.Identifier, "tag name expected")
 			if endTag.Value != node.Data {
-				panic("tags dont match")
+				panic("tags don't match")
 			}
-			p.expect(CloseTag, "expected > aftzer closing tag")
+			p.expect(lx.CloseTag, "expected > after closing tag")
 			break
 		}
 
